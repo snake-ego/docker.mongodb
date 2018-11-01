@@ -2,7 +2,7 @@
 set -e
 
 USER='mongodb'
-CMD='mongod --bind_ip_all'
+CMD='mongod'
 
 if [ -e '/etc/mongod.conf' ]; then CMD="$CMD -f /etc/mongod.conf"; fi
 
