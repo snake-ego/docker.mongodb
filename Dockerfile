@@ -12,4 +12,4 @@ VOLUME ["/data/db", "/data/configdb"]
 EXPOSE 27017
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["mongod"]
+CMD [""]
