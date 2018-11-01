@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine:3.8
 
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 ADD http://af.it-test.pw/su-exec/alpine/suexec /usr/local/bin/suexec
