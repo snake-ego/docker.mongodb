@@ -1,24 +1,49 @@
 #!/bin/sh
 set -e
 
-USER='mongodb'
 CMD='mongod'
+ARGS="--bind_ip_all"
+USER='mongodb'
+CONFIG='/etc/mongod.conf'
+SUEXEC="/usr/local/bin/suexec"
 
-if [ -e '/etc/mongod.conf' ]; then CMD="$CMD -f /etc/mongod.conf"; fi
-
-if [ ! -d "/data/configdb" ]; then mkdir -p /data/configdb; fi
-if [ ! -d "/data/db" ]; then mkdir -p /data/db; fi
-
-if [ "${1:0:1}" = '-' ]; then 
-    set -- $CMD "$@"; 
-fi
-if [ "$1" = 'mongod' ] && [ "$(id -u)" = '0' ]; then
-    shift
+function main() {
+    if is_privileged; then CMD="/usr/local/bin/suexec $USER $CMD"; fi
+    if is_config_presents; then ARGS="$ARGS -f $CONFIG"; fi
     
-    [ "$(stat -c %U /data/db)" = $USER ] || chown -R $USER /data/db
-    [ "$(stat -c %U /data/configdb)" = $USER ] || chown -R $USER /data/configdb
-    
-    exec "/usr/local/bin/suexec" $USER $CMD "$@"
-fi
+    create_folders
 
-exec "$@"
+    if is_empty "$@"; then execute $CMD $ARGS; fi
+    if is_arguments "$@"; then execute $CMD $ARGS $@; fi
+    execute $@
+}
+
+function is_empty() {
+    [ -z "$1" ]
+}
+function is_arguments() {
+    [ "${1:0:1}" = '-' ]
+}
+function is_privileged() {
+    [ "$(id -u)" = '0' ]
+}
+function is_config_presents() {
+    [ -e "$CONFIG" ]
+}
+
+function create_folders() {
+    if [ ! -d "/data/configdb" ]; then mkdir -p /data/configdb; fi
+    if [ ! -d "/data/db" ]; then mkdir -p /data/db; fi
+
+    if is_privileged; then 
+        [ "$(stat -c %U /data/db)" = $USER ] || chown -R $USER /data/db
+        [ "$(stat -c %U /data/configdb)" = $USER ] || chown -R $USER /data/configdb
+    fi
+}
+
+function execute() {
+    exec $@
+    exit $?
+}
+
+main $@
